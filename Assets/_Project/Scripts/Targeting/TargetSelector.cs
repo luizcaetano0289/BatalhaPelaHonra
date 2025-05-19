@@ -18,6 +18,9 @@ public class TargetSelector : MonoBehaviour
     private GameObject currentFloatingHUD;
     private Targetable currentTarget;
 
+    public System.Action<GameObject> OnTargetChanged;
+    private int currentTargetIndex = -1;
+
     void Update()
     {
         HandleClickSelection();
@@ -52,48 +55,61 @@ public class TargetSelector : MonoBehaviour
         foreach (Collider col in nearby)
         {
             Targetable t = col.GetComponent<Targetable>();
-            if (t != null && (t.targetType == TargetType.EnemyNPC || t.targetType == TargetType.EnemyPlayer))
+            if (t != null &&
+                (t.targetType == TargetType.EnemyNPC || t.targetType == TargetType.EnemyPlayer))
             {
                 enemies.Add(t);
             }
         }
 
-        if (enemies.Count == 0) return;
-
-        if (currentTarget == null || !enemies.Contains(currentTarget))
-        {
-            SetTarget(enemies[0].transform);
+        if (enemies.Count == 0)
             return;
-        }
 
-        int currentIndex = enemies.IndexOf(currentTarget);
-        int nextIndex = (currentIndex + 1) % enemies.Count;
-        SetTarget(enemies[nextIndex].transform);
+        // Garante consistência da lista
+        enemies.Sort((a, b) => a.name.CompareTo(b.name));
+
+        // Atualiza índice
+        currentTargetIndex = (currentTargetIndex + 1) % enemies.Count;
+
+        SetTarget(enemies[currentTargetIndex].transform);
     }
 
     public void SetTarget(Transform newTarget)
     {
         Targetable target = newTarget.GetComponent<Targetable>();
-        if (target == null) return;
+        if (target == null)
+            return;
 
+        // Atualiza o novo alvo mesmo que seja igual, para forçar a limpeza visual
         currentTarget = target;
         UpdateTargetIndicator();
+        OnTargetChanged?.Invoke(target.gameObject);
+
     }
 
     private void UpdateTargetIndicator()
     {
-        // Destroi indicador anterior
-        if (currentIndicator != null)
-            Destroy(currentIndicator);
+        // 🧹 Destroi todos os HUDs e círculos de todos os inimigos ativos na cena
+        foreach (var t in FindObjectsOfType<Targetable>())
+        {
+            foreach (Transform child in t.transform)
+            {
+                if (child.name.Contains("Indicator") || child.GetComponent<FloatingHUD>() != null)
+                {
+                    Destroy(child.gameObject);
+                }
+            }
+        }
 
-        // Destroi HUD anterior
-        if (currentFloatingHUD != null)
-            Destroy(currentFloatingHUD);
+        currentIndicator = null;
+        currentFloatingHUD = null;
 
-        if (currentTarget == null) return;
+        if (currentTarget == null)
+            return;
 
-        // Instancia círculo de seleção
+        // 🎯 Círculo de seleção
         currentIndicator = Instantiate(indicatorPrefab);
+        currentIndicator.name = "Indicator"; // facilita identificação
         currentIndicator.transform.SetParent(currentTarget.transform, false);
 
         // Ajusta posição no chão
@@ -121,18 +137,18 @@ public class TargetSelector : MonoBehaviour
             }
         }
 
-        // Instancia HUD flutuante se tiver UnitStats
+        // 🎯 HUD flutuante
         UnitStats stats = currentTarget.GetComponent<UnitStats>();
         if (stats != null)
         {
             currentFloatingHUD = Instantiate(floatingHudPrefab);
+            currentFloatingHUD.name = "FloatingHUD";
             currentFloatingHUD.transform.SetParent(currentTarget.transform, false);
-            currentFloatingHUD.transform.localPosition = new Vector3(0, 1.8f, 0);  // Aqui muda a posição do HUD de vida do alvo
+            currentFloatingHUD.transform.localPosition = new Vector3(0, 1.8f, 0);
 
             FloatingHUD hud = currentFloatingHUD.GetComponent<FloatingHUD>();
-            hud.Initialize(stats);            
+            hud.Initialize(stats);
         }
-
     }
 
     public Transform GetCurrentTarget()

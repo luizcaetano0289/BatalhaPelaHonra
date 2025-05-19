@@ -10,6 +10,8 @@ public class PlayerCombatInput : MonoBehaviour
     {
         autoAttack = GetComponent<AutoAttack>();
         targetSelector = GetComponent<TargetSelector>(); // ← Resolve automaticamente
+        targetSelector.OnTargetChanged += HandleTargetChanged;
+
     }
 
     void Update()
@@ -74,4 +76,11 @@ public class PlayerCombatInput : MonoBehaviour
             }
         }
     }
+
+    private void HandleTargetChanged(GameObject newTarget)
+    {
+        autoAttack.StopAutoAttack(); // Para de atacar o alvo antigo
+        autoAttack.SetTarget(newTarget); // Define o novo alvo, mas sem iniciar ataque ainda
+    }
+
 }

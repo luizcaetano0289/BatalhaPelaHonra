@@ -85,9 +85,20 @@ public class AutoAttack : MonoBehaviour
     public void StartAutoAttack(GameObject target)
     {
         SetTarget(target);
-        lastAttackTime = Time.time - attackCooldown;
-        autoAttackActive = true;
+
+        float distance = Vector3.Distance(transform.position, target.transform.position);
+
+        // Só começa a atacar se estiver no alcance
+        if (distance <= attackRange)
+        {
+            lastAttackTime = Time.time;
+        }
+        else
+        {
+            lastAttackTime = Time.time - attackCooldown + 0.1f; // espera o player se aproximar
+        }
     }
+
 
     public void StopAutoAttack()
     {
