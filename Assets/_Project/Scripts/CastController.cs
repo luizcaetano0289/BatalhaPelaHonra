@@ -16,6 +16,15 @@ public class CastController : MonoBehaviour
     {
         if (!IsCasting) return;
 
+        // Cancelar se o jogador se mover (simples verificação)
+        PlayerMovement playerMovement = GetComponent<PlayerMovement>();
+        if (playerMovement != null && playerMovement.IsMoving)
+        {
+            InterruptCast();
+            Debug.Log("Cast cancelado por movimento.");
+            return;
+        }
+
         ElapsedTime += Time.deltaTime;
 
         if (ElapsedTime >= CastTime)
@@ -24,8 +33,15 @@ public class CastController : MonoBehaviour
         }
     }
 
+
     public void StartCast(string spellName, float duration)
     {
+        if (CooldownManager.Instance != null && CooldownManager.Instance.IsGlobalCooldownActive)
+        {
+            Debug.Log("GCD ativo. Aguarde antes de lançar outra magia.");
+            return;
+        }
+
         IsCasting = true;
         CastTime = duration;
         ElapsedTime = 0f;
@@ -44,6 +60,10 @@ public class CastController : MonoBehaviour
 
     private void EndCast()
     {
+        if (CooldownManager.Instance != null)
+            CooldownManager.Instance.TriggerGlobalCooldown();
+
+
         IsCasting = false;
         OnCastEnd?.Invoke();
     }

@@ -10,6 +10,8 @@ public class UnitStats : MonoBehaviour
     public bool isCasting = false;
     public float castProgress = 0f; // 0 a 1 (progresso da magia)
 
+    public event System.Action OnHealthChanged;
+
     private void Start()
     {
         currentHealth = maxHealth;
@@ -57,6 +59,7 @@ public class UnitStats : MonoBehaviour
     {
         currentHealth -= amount;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+        OnHealthChanged?.Invoke();
 
         Debug.Log($"{gameObject.name} perdeu {amount} de HP. Restam: {currentHealth}");
 

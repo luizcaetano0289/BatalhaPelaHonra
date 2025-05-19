@@ -14,11 +14,14 @@ public class AutoAttack : MonoBehaviour
 
     private Animator animator;
 
+    private SwingTimerUI swingUI;
+
     void Start()
     {
         animator = GetComponentInChildren<Animator>();
         lastAttackTime = Time.time - attackCooldown; // força o primeiro ataque a sair instantâneo
         animator.ResetTrigger("Attack");
+        swingUI = FindObjectOfType<SwingTimerUI>(); // ou referencie via campo público
     }
 
     void Update()
@@ -79,8 +82,13 @@ public class AutoAttack : MonoBehaviour
         {
             stats.TakeDamage(damage);
             Debug.Log("Dano do ataque aplicado via evento de animação.");
+
+            // ✅ Inicia o Swing Timer sincronizado com o impacto
+            if (swingUI != null)
+                swingUI.StartSwing(attackCooldown);
         }
     }
+
 
     public void StartAutoAttack(GameObject target)
     {

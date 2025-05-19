@@ -4,18 +4,27 @@ using UnityEngine.UI;
 public class HealthComponent : MonoBehaviour
 {
     public Slider healthSlider;
+
     private UnitStats unitStats;
 
     public void Initialize(UnitStats stats)
     {
         unitStats = stats;
+        unitStats.OnHealthChanged += UpdateHUD;
+        UpdateHUD();
     }
 
-    void Update()
+    private void UpdateHUD()
     {
-        if (unitStats != null)
+        if (unitStats != null && healthSlider != null)
         {
             healthSlider.value = unitStats.GetHealthNormalized();
         }
+    }
+
+    private void OnDestroy()
+    {
+        if (unitStats != null)
+            unitStats.OnHealthChanged -= UpdateHUD;
     }
 }

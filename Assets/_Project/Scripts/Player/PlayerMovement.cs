@@ -8,6 +8,8 @@ public class PlayerMovement : MonoBehaviour
     private Animator animator;
     private CharacterController controller;
 
+    public bool IsMoving { get; private set; }
+
     private void Awake()
     {
         animator = GetComponentInChildren<Animator>();
@@ -16,6 +18,9 @@ public class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
+        Vector3 input = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
+        IsMoving = input.magnitude > 0.1f;
+
         float h = Input.GetAxisRaw("Horizontal");
         float v = Input.GetAxisRaw("Vertical");
 
