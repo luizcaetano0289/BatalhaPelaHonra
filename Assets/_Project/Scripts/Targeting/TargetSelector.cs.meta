@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 2622c030abe1b7f48b24aeea40a34389
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - indicatorPrefab: {instanceID: 0}
+  - currentTarget: {instanceID: 0}
+  - floatingHudPrefab: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
