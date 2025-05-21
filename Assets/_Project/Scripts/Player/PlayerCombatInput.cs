@@ -27,7 +27,7 @@ public class PlayerCombatInput : MonoBehaviour
         {
             autoAttack.StopAutoAttack();
             targetSelector.ClearTarget();
-            targetManager.ResetTabIndex(); // Corrigido aqui
+            targetSelector.ResetTabIndex(); // ✅ Agora corretamente no TargetSelector
         }
     }
 
@@ -58,7 +58,7 @@ public class PlayerCombatInput : MonoBehaviour
             {
                 targetSelector.ClearTarget();
                 autoAttack.StopAutoAttack();
-                targetManager.ResetTabIndex(); // Corrigido aqui
+                targetSelector.ResetTabIndex(); // ✅ Corrigido aqui também
             }
         }
     }
@@ -85,7 +85,13 @@ public class PlayerCombatInput : MonoBehaviour
 
     private void HandleTargetChanged(GameObject newTarget)
     {
-        autoAttack.StopAutoAttack();
         autoAttack.SetTarget(newTarget);
+
+        // Se já estiver atacando, continue o ataque no novo alvo
+        if (autoAttack.autoAttackActive && newTarget != null)
+        {
+            autoAttack.TransferAutoAttackToNewTarget(newTarget);
+        }
     }
+
 }

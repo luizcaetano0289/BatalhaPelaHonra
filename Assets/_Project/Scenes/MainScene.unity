@@ -3419,10 +3419,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36ff6ea5ce5f0914e85154efabc5f3ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tabTargetRange: 40
-  enemyLayer:
-    serializedVersion: 2
-    m_Bits: 512
   playerTransform: {fileID: 1705736224}
   autoAttack: {fileID: 1705736231}
   targetSelector: {fileID: 1705736232}
@@ -6823,7 +6819,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetLayer:
     serializedVersion: 2
-    m_Bits: 256
+    m_Bits: 520
   maxSelectionDistance: 100
   detectionRadius: 30
   indicatorPrefab: {fileID: 2596833274293987256, guid: 0e3c72e131dcac743bd99874b5a480d8, type: 3}

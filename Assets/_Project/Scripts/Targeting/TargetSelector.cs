@@ -24,13 +24,15 @@ public class TargetSelector : MonoBehaviour
 
     void Update()
     {
-        HandleClickSelection();
-
         if (Input.GetKeyDown(KeyCode.Tab))
         {
+            Debug.Log("TAB pressionado - tentando alternar alvo");
             CycleEnemyTarget();
         }
+
+        HandleClickSelection();
     }
+
 
     private void HandleClickSelection()
     {
@@ -53,38 +55,47 @@ public class TargetSelector : MonoBehaviour
         Collider[] nearby = Physics.OverlapSphere(transform.position, detectionRadius, targetLayer);
         List<Targetable> enemies = new List<Targetable>();
 
+        Debug.Log($"[TAB] Encontrados {nearby.Length} colliders no raio de {detectionRadius}");
+
         foreach (Collider col in nearby)
         {
             Targetable t = col.GetComponent<Targetable>();
             if (t != null && (t.targetType == TargetType.EnemyNPC || t.targetType == TargetType.EnemyPlayer))
             {
                 enemies.Add(t);
+                Debug.Log($"[TAB] Inimigo válido: {t.name}");
             }
         }
 
         if (enemies.Count == 0)
+        {
+            Debug.LogWarning("[TAB] Nenhum inimigo válido encontrado.");
             return;
+        }
 
-        // Ordena pela distância ao player
         enemies.Sort((a, b) =>
             Vector3.Distance(transform.position, a.transform.position)
             .CompareTo(Vector3.Distance(transform.position, b.transform.position)));
 
-        // Atualiza índice com base no alvo atual
         var current = GetCurrentTarget();
         if (current != null)
         {
             currentTargetIndex = enemies.FindIndex(e => e.transform == current);
+            Debug.Log($"[TAB] Índice atual encontrado: {currentTargetIndex}");
         }
         else
         {
             currentTargetIndex = -1;
+            Debug.Log("[TAB] Nenhum alvo atual, iniciando do início.");
         }
 
         currentTargetIndex = (currentTargetIndex + 1) % enemies.Count;
 
+        Debug.Log($"[TAB] Novo alvo: {enemies[currentTargetIndex].name}");
+
         SetTarget(enemies[currentTargetIndex].transform);
     }
+
 
     public void SetTarget(Transform newTarget)
     {
@@ -96,9 +107,8 @@ public class TargetSelector : MonoBehaviour
         UpdateTargetIndicator();
         OnTargetChanged?.Invoke(target.gameObject);
 
-        Debug.Log("[Selecionado] " + target.name); // ← Mantenha esse
+        Debug.Log("[Selecionado] " + target.name);
     }
-
 
     private void UpdateTargetIndicator()
     {
@@ -167,8 +177,14 @@ public class TargetSelector : MonoBehaviour
     public void ClearTarget()
     {
         currentTarget = null;
-        currentTargetIndex = -1; // reseta a rotação do tab
+        currentTargetIndex = -1;
         if (currentFloatingHUD != null) Destroy(currentFloatingHUD);
         if (currentIndicator != null) Destroy(currentIndicator);
+    }
+
+    // ✅ Necessário para reiniciar a rotação ao pressionar ESC ou clicar em área vazia
+    public void ResetTabIndex()
+    {
+        currentTargetIndex = -1;
     }
 }

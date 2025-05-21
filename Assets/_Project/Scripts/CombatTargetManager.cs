@@ -1,79 +1,46 @@
 using UnityEngine;
-using System.Collections.Generic;
-using System.Linq;
 
 public class CombatTargetManager : MonoBehaviour
 {
-    [Header("Configurações")]
-    public float tabTargetRange = 40f;
-    public LayerMask enemyLayer;
-
     [Header("Referências")]
     public Transform playerTransform;
     public AutoAttack autoAttack;
     public TargetSelector targetSelector;
 
-    private List<Targetable> tabTargets = new List<Targetable>();
-    private int currentTabIndex = -1;
-
-    void Update()
+    void Start()
     {
-        if (Input.GetKeyDown(KeyCode.Tab))
-        {
-            HandleTabTargeting();
-        }
+        if (autoAttack == null)
+            autoAttack = FindObjectOfType<AutoAttack>();
+
+        if (targetSelector == null)
+            targetSelector = FindObjectOfType<TargetSelector>();
     }
 
-    private void HandleTabTargeting()
+    /// <summary>
+    /// Ataca o alvo com clique direito do mouse (deve ser chamado pelo PlayerCombatInput)
+    /// </summary>
+    public void HandleRightClick(RaycastHit hit)
     {
-        Collider[] hits = Physics.OverlapSphere(playerTransform.position, tabTargetRange, enemyLayer);
-        List<Targetable> enemies = hits
-            .Select(col => col.GetComponent<Targetable>())
-            .Where(t => t != null && (t.targetType == TargetType.EnemyNPC || t.targetType == TargetType.EnemyPlayer))
-            .OrderBy(t => Vector3.Distance(playerTransform.position, t.transform.position))
-            .ToList();
-
-        if (enemies.Count == 0)
-        {
+        if (hit.collider == null || hit.collider.GetComponent<Targetable>() == null)
             return;
-        }
 
-        // Se o alvo atual foi selecionado manualmente, sincroniza o índice
-        Transform current = targetSelector.GetCurrentTarget();
-        if (current != null)
-        {
-            int foundIndex = enemies.FindIndex(e => e.transform == current);
-            if (foundIndex >= 0)
-            {
-                currentTabIndex = foundIndex;
-            }
-        }
+        var target = hit.collider.GetComponent<Targetable>();
+        if (target == null)
+            return;
 
-        // Avança para o próximo alvo
-        currentTabIndex++;
-        if (currentTabIndex >= enemies.Count)
-        {
-            currentTabIndex = 0;
-        }
-
-        var newTarget = enemies[currentTabIndex];
-        targetSelector.SetTarget(newTarget.transform);
-
-        if (autoAttack.IsAutoAttacking)
-        {
-            autoAttack.StartAutoAttack(newTarget.gameObject);
-        }
+        targetSelector.SetTarget(target.transform);
+        autoAttack.StartAutoAttack(target.gameObject);
     }
 
-    public void ResetTabIndex()
-    {
-        currentTabIndex = -1;
-    }
-
+    /// <summary>
+    /// Cancela ataque e limpa o alvo atual
+    /// </summary>
     public void ClearTarget()
     {
-        targetSelector.ClearTarget();
-        autoAttack.StopAutoAttack();
-        ResetTabIndex();
+        if (targetSelector != null)
+            targetSelector.ClearTarget();
+
+        if (autoAttack != null)
+            autoAttack.StopAutoAttack();
     }
 }

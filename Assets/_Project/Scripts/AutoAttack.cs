@@ -19,7 +19,7 @@ public class AutoAttack : MonoBehaviour
     void Start()
     {
         animator = GetComponentInChildren<Animator>();
-        lastAttackTime = Time.time - attackCooldown;
+        lastAttackTime = Time.time; // Evita ataque precoce
         animator.ResetTrigger("Attack");
         swingUI = FindObjectOfType<SwingTimerUI>();
     }
@@ -66,6 +66,9 @@ public class AutoAttack : MonoBehaviour
             animator.SetTrigger("Attack");
             Debug.Log("Animação de ataque iniciada.");
         }
+
+        // 🔄 Remova a linha abaixo do Update!
+        // lastAttackTime = Time.time; 
     }
 
     public void ApplyAttackDamage()
@@ -79,6 +82,8 @@ public class AutoAttack : MonoBehaviour
             Debug.LogWarning("Alvo fora do alcance no frame do impacto — dano cancelado.");
             return;
         }
+
+        lastAttackTime = Time.time; // ✅ Atualiza aqui, no momento exato do dano
 
         if (currentTarget.TryGetComponent(out UnitStats stats))
         {
@@ -98,17 +103,7 @@ public class AutoAttack : MonoBehaviour
         currentTarget = target;
         IsAutoAttacking = true;
         autoAttackActive = true;
-
-        float distance = Vector3.Distance(transform.position, target.transform.position);
-
-        if (distance <= attackRange)
-        {
-            lastAttackTime = Time.time - attackCooldown; // permite atacar imediatamente
-        }
-        else
-        {
-            lastAttackTime = Time.time;
-        }
+        // NÃO reinicia cooldown aqui — espera tempo anterior finalizar
     }
 
     public void StopAutoAttack()
@@ -120,4 +115,24 @@ public class AutoAttack : MonoBehaviour
         if (animator != null)
             animator.ResetTrigger("Attack");
     }
+
+    public void TransferAutoAttackToNewTarget(GameObject newTarget)
+    {
+        if (newTarget == null || !newTarget.activeInHierarchy)
+            return;
+
+        float distance = Vector3.Distance(transform.position, newTarget.transform.position);
+
+        // Só atualiza o alvo, sem resetar o cooldown
+        currentTarget = newTarget;
+
+        Debug.Log($"[AutoAttack] Transferido para novo alvo: {newTarget.name}");
+
+        // Se estiver no alcance, continua normalmente
+        if (distance <= attackRange)
+        {
+            // Nada muda no tempo do ataque, só aguardamos o próximo ciclo
+        }
+    }
+
 }
