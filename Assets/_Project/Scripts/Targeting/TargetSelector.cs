@@ -11,14 +11,15 @@ public class TargetSelector : MonoBehaviour
     [SerializeField] private float detectionRadius = 30f;
 
     [Header("Prefabs")]
-    [SerializeField] private GameObject indicatorPrefab; // Círculo no chão
-    [SerializeField] private GameObject floatingHudPrefab; // HUD flutuante
+    [SerializeField] private GameObject indicatorPrefab;
+    [SerializeField] private GameObject floatingHudPrefab;
 
     private GameObject currentIndicator;
     private GameObject currentFloatingHUD;
     private Targetable currentTarget;
 
     public System.Action<GameObject> OnTargetChanged;
+
     private int currentTargetIndex = -1;
 
     void Update()
@@ -49,14 +50,13 @@ public class TargetSelector : MonoBehaviour
 
     private void CycleEnemyTarget()
     {
-        Collider[] nearby = Physics.OverlapSphere(transform.position, detectionRadius);
+        Collider[] nearby = Physics.OverlapSphere(transform.position, detectionRadius, targetLayer);
         List<Targetable> enemies = new List<Targetable>();
 
         foreach (Collider col in nearby)
         {
             Targetable t = col.GetComponent<Targetable>();
-            if (t != null &&
-                (t.targetType == TargetType.EnemyNPC || t.targetType == TargetType.EnemyPlayer))
+            if (t != null && (t.targetType == TargetType.EnemyNPC || t.targetType == TargetType.EnemyPlayer))
             {
                 enemies.Add(t);
             }
@@ -65,10 +65,22 @@ public class TargetSelector : MonoBehaviour
         if (enemies.Count == 0)
             return;
 
-        // Garante consistência da lista
-        enemies.Sort((a, b) => a.name.CompareTo(b.name));
+        // Ordena pela distância ao player
+        enemies.Sort((a, b) =>
+            Vector3.Distance(transform.position, a.transform.position)
+            .CompareTo(Vector3.Distance(transform.position, b.transform.position)));
 
-        // Atualiza índice
+        // Atualiza índice com base no alvo atual
+        var current = GetCurrentTarget();
+        if (current != null)
+        {
+            currentTargetIndex = enemies.FindIndex(e => e.transform == current);
+        }
+        else
+        {
+            currentTargetIndex = -1;
+        }
+
         currentTargetIndex = (currentTargetIndex + 1) % enemies.Count;
 
         SetTarget(enemies[currentTargetIndex].transform);
@@ -80,16 +92,16 @@ public class TargetSelector : MonoBehaviour
         if (target == null)
             return;
 
-        // Atualiza o novo alvo mesmo que seja igual, para forçar a limpeza visual
         currentTarget = target;
         UpdateTargetIndicator();
         OnTargetChanged?.Invoke(target.gameObject);
 
+        Debug.Log("[Selecionado] " + target.name); // ← Mantenha esse
     }
+
 
     private void UpdateTargetIndicator()
     {
-        // 🧹 Destroi todos os HUDs e círculos de todos os inimigos ativos na cena
         foreach (var t in FindObjectsOfType<Targetable>())
         {
             foreach (Transform child in t.transform)
@@ -107,12 +119,10 @@ public class TargetSelector : MonoBehaviour
         if (currentTarget == null)
             return;
 
-        // 🎯 Círculo de seleção
         currentIndicator = Instantiate(indicatorPrefab);
-        currentIndicator.name = "Indicator"; // facilita identificação
+        currentIndicator.name = "Indicator";
         currentIndicator.transform.SetParent(currentTarget.transform, false);
 
-        // Ajusta posição no chão
         Collider col = currentTarget.GetComponent<Collider>();
         if (col != null)
         {
@@ -120,7 +130,6 @@ public class TargetSelector : MonoBehaviour
             currentIndicator.transform.localPosition = new Vector3(0, yOffset, 0);
         }
 
-        // Define cor do indicador
         Renderer r = currentIndicator.GetComponentInChildren<Renderer>();
         if (r != null)
         {
@@ -137,7 +146,6 @@ public class TargetSelector : MonoBehaviour
             }
         }
 
-        // 🎯 HUD flutuante
         UnitStats stats = currentTarget.GetComponent<UnitStats>();
         if (stats != null)
         {
@@ -154,5 +162,13 @@ public class TargetSelector : MonoBehaviour
     public Transform GetCurrentTarget()
     {
         return currentTarget != null ? currentTarget.transform : null;
+    }
+
+    public void ClearTarget()
+    {
+        currentTarget = null;
+        currentTargetIndex = -1; // reseta a rotação do tab
+        if (currentFloatingHUD != null) Destroy(currentFloatingHUD);
+        if (currentIndicator != null) Destroy(currentIndicator);
     }
 }

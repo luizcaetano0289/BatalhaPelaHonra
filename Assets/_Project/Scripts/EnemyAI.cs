@@ -51,4 +51,10 @@ public class EnemyAI : MonoBehaviour
             animator.SetBool("IsMoving", isMoving);
         }
     }
+
+    public bool IsPlayerInChaseRange()
+    {
+        if (player == null) return false;
+        return Vector3.Distance(transform.position, player.position) <= chaseDistance;
+    }
 }

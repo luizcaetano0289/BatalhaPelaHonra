@@ -3,12 +3,13 @@ using UnityEngine;
 public class AbilityController : MonoBehaviour
 {
     public GameObject player;
-    public EnemySelector enemySelector;
+    public TargetSelector targetSelector;
     public AbilitySlot fireballSlot;
 
     public void CastFireball()
     {
-        GameObject target = enemySelector.GetSelectedTarget();
+        Transform targetTransform = targetSelector.GetCurrentTarget();
+        GameObject target = targetTransform != null ? targetTransform.gameObject : null;
 
         if (player != null && target != null && fireballSlot != null)
         {

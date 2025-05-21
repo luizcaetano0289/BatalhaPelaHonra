@@ -3,6 +3,7 @@
 public class AutoAttack : MonoBehaviour
 {
     public bool autoAttackActive { get; private set; } = false;
+    public bool IsAutoAttacking { get; private set; }
 
     [Header("Configuração do Ataque")]
     public float attackRange = 2f;
@@ -13,19 +14,21 @@ public class AutoAttack : MonoBehaviour
     private GameObject currentTarget;
 
     private Animator animator;
-
     private SwingTimerUI swingUI;
 
     void Start()
     {
         animator = GetComponentInChildren<Animator>();
-        lastAttackTime = Time.time - attackCooldown; // força o primeiro ataque a sair instantâneo
+        lastAttackTime = Time.time - attackCooldown;
         animator.ResetTrigger("Attack");
-        swingUI = FindObjectOfType<SwingTimerUI>(); // ou referencie via campo público
+        swingUI = FindObjectOfType<SwingTimerUI>();
     }
 
     void Update()
     {
+        if (!IsAutoAttacking)
+            return;
+
         if (currentTarget == null || !currentTarget.activeInHierarchy)
         {
             StopAutoAttack();
@@ -40,7 +43,6 @@ public class AutoAttack : MonoBehaviour
             lastAttackTime = Time.time;
         }
     }
-
 
     public void SetTarget(GameObject target)
     {
@@ -83,38 +85,39 @@ public class AutoAttack : MonoBehaviour
             stats.TakeDamage(damage);
             Debug.Log("Dano do ataque aplicado via evento de animação.");
 
-            // ✅ Inicia o Swing Timer sincronizado com o impacto
             if (swingUI != null)
                 swingUI.StartSwing(attackCooldown);
         }
     }
 
-
     public void StartAutoAttack(GameObject target)
     {
-        SetTarget(target);
+        if (target == null || !target.activeInHierarchy)
+            return;
+
+        currentTarget = target;
+        IsAutoAttacking = true;
+        autoAttackActive = true;
 
         float distance = Vector3.Distance(transform.position, target.transform.position);
 
-        // Só começa a atacar se estiver no alcance
         if (distance <= attackRange)
         {
-            lastAttackTime = Time.time;
+            lastAttackTime = Time.time - attackCooldown; // permite atacar imediatamente
         }
         else
         {
-            lastAttackTime = Time.time - attackCooldown + 0.1f; // espera o player se aproximar
+            lastAttackTime = Time.time;
         }
     }
-
 
     public void StopAutoAttack()
     {
         currentTarget = null;
+        IsAutoAttacking = false;
         autoAttackActive = false;
 
         if (animator != null)
             animator.ResetTrigger("Attack");
     }
-
 }

@@ -2,16 +2,20 @@
 
 public class PlayerCombatInput : MonoBehaviour
 {
-    private AutoAttack autoAttack;
-
     [SerializeField] private TargetSelector targetSelector;
+    [SerializeField] private CombatTargetManager targetManager;
+    private AutoAttack autoAttack;
+    private Transform playerTransform;
 
     void Start()
     {
         autoAttack = GetComponent<AutoAttack>();
-        targetSelector = GetComponent<TargetSelector>(); // ← Resolve automaticamente
-        targetSelector.OnTargetChanged += HandleTargetChanged;
+        targetSelector = GetComponent<TargetSelector>();
+        targetManager = FindObjectOfType<CombatTargetManager>();
+        playerTransform = transform;
 
+        if (targetSelector != null)
+            targetSelector.OnTargetChanged += HandleTargetChanged;
     }
 
     void Update()
@@ -22,40 +26,46 @@ public class PlayerCombatInput : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             autoAttack.StopAutoAttack();
+            targetSelector.ClearTarget();
+            targetManager.ResetTabIndex(); // Corrigido aqui
         }
     }
 
     private void HandleLeftClickSelection()
     {
-        if (Input.GetMouseButtonDown(0)) // Botão esquerdo
+        if (Input.GetMouseButtonDown(0))
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit[] hits = Physics.RaycastAll(ray, 100f);
+
+            bool hitSomething = false;
 
             foreach (RaycastHit hit in hits)
             {
                 if (hit.collider.CompareTag("Enemy"))
                 {
-                    Transform enemy = hit.transform;
+                    hitSomething = true;
+                    targetSelector.SetTarget(hit.transform);
 
-                    if (targetSelector != null)
-                        targetSelector.SetTarget(enemy);
-
-                    // Se estiver atacando, já troca o alvo e continua o ataque
                     if (autoAttack.autoAttackActive)
-                    {
-                        autoAttack.StartAutoAttack(enemy.gameObject);
-                    }
+                        autoAttack.StartAutoAttack(hit.transform.gameObject);
 
-                    break; // para no primeiro inimigo encontrado
+                    break;
                 }
+            }
+
+            if (!hitSomething)
+            {
+                targetSelector.ClearTarget();
+                autoAttack.StopAutoAttack();
+                targetManager.ResetTabIndex(); // Corrigido aqui
             }
         }
     }
 
     private void HandleRightClickAttack()
     {
-        if (Input.GetMouseButtonDown(1)) // Botão direito
+        if (Input.GetMouseButtonDown(1))
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit[] hits = Physics.RaycastAll(ray, 100f);
@@ -64,14 +74,10 @@ public class PlayerCombatInput : MonoBehaviour
             {
                 if (hit.collider.CompareTag("Enemy"))
                 {
-                    Transform enemy = hit.transform;
-
-                    if (targetSelector != null)
-                        targetSelector.SetTarget(enemy);
-
-                    autoAttack.StartAutoAttack(enemy.gameObject); // mesmo se estiver longe
-
-                    break; // para no primeiro inimigo encontrado
+                    GameObject enemy = hit.collider.gameObject;
+                    targetSelector.SetTarget(enemy.transform);
+                    autoAttack.StartAutoAttack(enemy);
+                    break;
                 }
             }
         }
@@ -79,8 +85,7 @@ public class PlayerCombatInput : MonoBehaviour
 
     private void HandleTargetChanged(GameObject newTarget)
     {
-        autoAttack.StopAutoAttack(); // Para de atacar o alvo antigo
-        autoAttack.SetTarget(newTarget); // Define o novo alvo, mas sem iniciar ataque ainda
+        autoAttack.StopAutoAttack();
+        autoAttack.SetTarget(newTarget);
     }
-
 }
