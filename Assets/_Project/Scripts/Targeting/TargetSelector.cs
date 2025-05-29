@@ -22,6 +22,16 @@ public class TargetSelector : MonoBehaviour
 
     private int currentTargetIndex = -1;
 
+    public static TargetSelector Instance { get; private set; }
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+            Destroy(gameObject);
+        else
+            Instance = this;
+    }
+
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Tab))

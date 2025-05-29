@@ -1,10 +1,10 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
 public class PlayerHUD : MonoBehaviour
 {
-    [Header("Refer�ncias")]
+    [Header("Referências")]
     [SerializeField] public PlayerStats playerStats;
     [SerializeField] public CastController castController;
 
@@ -17,37 +17,73 @@ public class PlayerHUD : MonoBehaviour
     [SerializeField] private TextMeshProUGUI txtHealth;
     [SerializeField] private TextMeshProUGUI txtMana;
 
+    [Header("Cast Info")]
+    [SerializeField] private TextMeshProUGUI txtCastName;
+
+    private void Start()
+    {
+        if (castController != null)
+        {
+            castController.OnCastStart += ShowCastBar;
+            castController.OnCastEnd += HideCastBar;
+            castController.OnCastInterrupt += HideCastBar;
+        }
+
+        if (sliderCast != null)
+            sliderCast.gameObject.SetActive(false);
+
+        if (txtCastName != null)
+            txtCastName.gameObject.SetActive(false); // 👈 Aqui você adiciona
+    }
+
+
+
     private void Update()
     {
-        // Vida
+        // Vida e mana
         sliderHealth.maxValue = playerStats.maxHealth;
         sliderHealth.value = playerStats.currentHealth;
 
-        // Mana
         sliderMana.maxValue = playerStats.maxMana;
         sliderMana.value = playerStats.currentMana;
 
-        // Texto Vida
         if (txtHealth != null)
             txtHealth.text = $"{sliderHealth.value} / {sliderHealth.maxValue}";
-
-        // Texto Mana
         if (txtMana != null)
             txtMana.text = $"{sliderMana.value} / {sliderMana.maxValue}";
 
-        // Cast
-        if (castController != null && sliderCast != null)
+        // Cast progress
+        if (castController != null && castController.IsCasting && sliderCast != null)
         {
-            if (castController.IsCasting)
-            {
-                sliderCast.gameObject.SetActive(true);
-                sliderCast.maxValue = 1f;
-                sliderCast.value = castController.GetCastProgress();
-            }
-            else
-            {
-                sliderCast.gameObject.SetActive(false);
-            }
+            sliderCast.value = castController.GetCastProgress();
         }
     }
+
+    private void ShowCastBar()
+    {
+        if (sliderCast != null)
+        {
+            sliderCast.value = 0f;
+            sliderCast.gameObject.SetActive(true);
+        }
+
+        if (txtCastName != null && castController != null)
+        {
+            txtCastName.gameObject.SetActive(true);
+            txtCastName.text = $"Conjurando: {castController.SpellName}...";
+        }
+    }
+
+    private void HideCastBar()
+    {
+        if (sliderCast != null)
+            sliderCast.gameObject.SetActive(false);
+
+        if (txtCastName != null)
+        {
+            txtCastName.text = "";
+            txtCastName.gameObject.SetActive(false);
+        }
+    }
+
 }
